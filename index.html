@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>❤ 光晕爱心 ❤</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+  .wrap { display: flex; align-items: center; justify-content: center; height: 100%; }
+  canvas { max-width: 100%; max-height: 100%; display: block; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <canvas id="cv" width="840" height="680"></canvas>
+</div>
+
+<script>
+// ============ 常量（对应 Python 版） ============
+const W = 840, H = 680;
+const CX = W / 2, CY = H / 2;
+const ENLARGE = 11;              // 爱心放大倍数
+const COLOR = '#e86184';         // 爱心颜色
+const FRAMES = 20;               // 一个心跳循环的帧数
+
+// ============ 心形参数方程（就是 Python 的 heart_function） ============
+function heartXY(t, ratio = ENLARGE) {
+  const x = 17 * Math.pow(Math.sin(t), 3);
+  const y = -(16 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(3 * t));
+  return [Math.round(x * ratio + CX), Math.round(y * ratio + CY)];
+}
+
+// ============ 朝中心散射（Python 的 scatter_inside） ============
+function scatterInside(x, y, beta = 0.15) {
+  const rx = -beta * Math.log(Math.max(Math.random(), 1e-9));
+  const ry = -beta * Math.log(Math.max(Math.random(), 1e-9));
+  const dx = rx * (x - CX), dy = ry * (y - CY);
+  return [x - dx, y - dy];
+}
+
+// ============ 径向推离，用于光晕（Python 的 shrink） ============
+function shrink(x, y, ratio) {
+  const force = -1 / Math.pow((x - CX) ** 2 + (y - CY) ** 2, 0.6);
+  const dx = ratio * force * (x - CX), dy = ratio * force * (y - CY);
+  return [x - dx, y - dy];
+}
+
+// ============ 心跳曲线（Python 的 curve） ============
+// 中间的 0.2 是频率系数：数字越小跳动越慢（原版是 4）
+function curve(p) { return 2 * Math.sin(0.1 * p) / Math.PI; }
+
+// ============ 一次性生成三层粒子（Python 的 Heart.build） ============
+const points = [], edge = [], center = [];
+for (let i = 0; i < 2000; i++) points.push(heartXY(Math.random() * 2 * Math.PI));
+for (const [x, y] of points) for (let k = 0; k < 3; k++) edge.push(scatterInside(x, y, 0.05));
+for (let i = 0; i < 10000; i++) {
+  const [x, y] = points[(Math.random() * points.length) | 0];
+  center.push(scatterInside(x, y, 0.27));
+}
+
+// ============ 光晕粒子（固定一批，数量精简，位置连续不闪烁） ============
+const halo = [];
+const HALO_N = 4000;
+for (let i = 0; i < HALO_N; i++) {
+  const t = Math.random() * 2 * Math.PI;
+  const [x, y] = heartXY(t, 12);                       // 外圈轮廓
+  const jx = (Math.random() * 2 - 1) * 40;             // 轻微随机抖动
+  const jy = (Math.random() * 2 - 1) * 40;
+  halo.push([x + jx, y + jy, 0.25 + Math.random() * 0.6, Math.random() < 0.25 ? 2 : 1]);
+}
+
+// ============ 计算某一帧的动画位置（Python 的 calc_position） ============
+function calcPosition(x, y, ratio) {
+  const force = 1 / Math.pow((x - CX) ** 2 + (y - CY) ** 2, 0.420);
+  const dx = ratio * force * (x - CX) + ((Math.random() * 3) | 0) - 1;
+  const dy = ratio * force * (y - CY) + ((Math.random() * 3) | 0) - 1;
+  return [x - dx, y - dy];
+}
+
+// ============ 预计算每一帧并画进离屏画布 ============
+// 关键优化：把每帧的几万个粒子「预先画到离屏画布」上，
+// 播放时每帧只做一次 drawImage，彻底告别逐点 fillRect 的卡顿。
+const frames = [];
+for (let f = 0; f < FRAMES; f++) {
+  const p = f / 10 * Math.PI;
+  const ratio = 11 * curve(p);            // 振动幅度（原 15，调小）
+  const haloScale = 1 + 0.25 * curve(p);  // 光晕随心跳缓慢缩放
+
+  const c = document.createElement('canvas');
+  c.width = W; c.height = H;
+  const g = c.getContext('2d');
+
+  // 光晕层：固定粒子随心跳缩放，缓慢涌动
+  for (const [hx, hy, a, s] of halo) {
+    const x = CX + (hx - CX) * haloScale;
+    const y = CY + (hy - CY) * haloScale;
+    g.fillStyle = `rgba(232, 97, 132, ${a})`;
+    g.fillRect(x, y, s, s);
+  }
+
+  // 主体 / 边缘 / 中心三层
+  g.fillStyle = COLOR;
+  for (const [x, y] of points) { const [nx, ny] = calcPosition(x, y, ratio); g.fillRect(nx, ny, ((Math.random() * 3) | 0) + 1, ((Math.random() * 3) | 0) + 1); }
+  for (const [x, y] of edge)   { const [nx, ny] = calcPosition(x, y, ratio); g.fillRect(nx, ny, ((Math.random() * 2) | 0) + 1, ((Math.random() * 2) | 0) + 1); }
+  for (const [x, y] of center) { const [nx, ny] = calcPosition(x, y, ratio); g.fillRect(nx, ny, ((Math.random() * 2) | 0) + 1, ((Math.random() * 2) | 0) + 1); }
+
+  frames.push(c);
+}
+
+// ============ 动画渲染 ============
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+let n = 0;
+function loop() {
+  ctx.clearRect(0, 0, W, H);
+  ctx.drawImage(frames[Math.floor(n / 2) % FRAMES], 0, 0);  // 改 2 可调快慢：1 更快、3 更慢
+  n++;
+  requestAnimationFrame(loop);
+}
+loop();
+</script>
+</body>
+</html>
