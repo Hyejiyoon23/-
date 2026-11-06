@@ -29,7 +29,7 @@ const GRID = [
   ".............ggchdrrrrdhgg................",
   "............gcchhhddddhchhg...............",
   "...........gcchhccchcchcchhg..............",
-  "........ggggghhhcchhcchhchggggg ..........", // 奶油顶
+  "........ggggghhhcchhcchhchggggg...........", // 奶油顶
   ".......gwwwwghhhgghhhchhggwwwwwg..........",
   "......gwwwwwwgggwwggggggwwwwwwwwg.........",
   ".....gwwwwwwwwwwwwwwwwwwwwwwwwwwwg........",
@@ -39,13 +39,13 @@ const GRID = [
   "....gwwwwggwwggwwwwwwwwwggwwggwwwwg.......",
   ".....gwwgwwwgwwgwwwwwwwgwwgwwwgwwg........", // 19行：眉毛
   "......ggwwwwggggwwwwwwwggggwwwwgg.........",
-  ".......gwwwwggggwwwwwwwggggwwwwwg.........", // 21行：眼睛从此处开始生成
-  ".......gwwwwggggwwwwwwwggggwwwwwg.........",
-  ".......gwwwwggggwwwwwwwggggwwwwwg.........",
-  ".......gwwwwwggwwwwgwwwwggwwwwwwg.........",
-  "........gwwwwwwwwwwwwwwwwwwwwwwg..........", // 25行：眼睛结束
-  ".........ggwwwwwwwwwwwwwwwwwwgg...........", // 26行：鼻子
-  "...........gggggggggggggggggg.............",
+  ".......gwwwwggggwwwwwwwggggwwwwg..........", // 21行：眼睛从此处开始生成
+  ".......gwwwwggggwwwwwwwggggwwwwg..........",
+  ".......gwwwwggggwwwwwwwggggwwwwg..........",
+  ".......gwwwwwggwwwwgwwwwggwwwwwg..........",
+  "........gwwwwwwwwwwwwwwwwwwwwwg...........", // 25行：眼睛结束
+  ".........ggwwwwwwwwwwwwwwwwwgg............", // 26行：鼻子
+  "...........ggggggggggggggggg..............",
 ];
 const COLORS = { 
   w: '#FFFFFF', // H2
@@ -60,7 +60,7 @@ const PX = 20;                       // 每个像素格放大到 20px
 const COLS = 43, ROWS = GRID.length;
 const cv = document.getElementById('cv');
 const ctx = cv.getContext('2d');
-const OX = (cv.width - COLS * PX) / 2;
+const OX = (cv.width - COLS * PX) / 2+50;
 const OY = (cv.height - ROWS * PX) / 2;
 
 // 眼睛参数（加入了高光偏移量 offsetX）
